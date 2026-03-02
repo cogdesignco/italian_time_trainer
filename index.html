@@ -453,12 +453,12 @@ const numbers=[
 ];
 function numberToWords(n){return numbers[n];}
 function hourWord(h){const h12=h%12||12;return h12===1?"l'una":`le ${numberToWords(h12)}`;}
-function getTimePhrase(h,m){
+function getTimePhrase(h,m,h24){
   const h12=h%12||12, nextH=(h12%12)+1;
   const useE=h12===1?"È":"Sono", useENext=nextH===1?"È":"Sono";
   const formal=`${String(h12).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-  if(h===0&&m===0)return{phrase:"È mezzanotte",formal};
-  if(h===12&&m===0)return{phrase:"È mezzogiorno",formal};
+  if(h24===0&&m===0)return{phrase:"È mezzanotte",formal};
+  if(h24===12&&m===0)return{phrase:"È mezzogiorno",formal};
   if(m===0)return{phrase:`${useE} ${hourWord(h)} in punto`,formal};
   if(m===15)return{phrase:`${useE} ${hourWord(h)} e un quarto`,formal};
   if(m===30)return{phrase:`${useE} ${hourWord(h)} e mezza`,formal};
@@ -470,20 +470,20 @@ function getTimePhrase(h,m){
   return{phrase:`${useE} ${hourWord(h)} e ${numberToWords(m)}`,formal};
 }
 function getPeriodLabel(h24){
-  if(h24>=0&&h24<6)return'notte';
-  if(h24>=6&&h24<12)return'mattina';
-  if(h24===12)return'mezzogiorno';
-  if(h24>12&&h24<18)return'pomeriggio';
-  if(h24>=18&&h24<21)return'sera';
-  return'notte';
+  if(h24 >= 0  && h24 <  6) return 'notte';
+  if(h24 >= 6  && h24 < 12) return 'mattina';
+  if(h24 >= 12 && h24 < 18) return 'pomeriggio';
+  if(h24 >= 18 && h24 < 24) return 'sera';
+  return 'notte';
 }
 function getDiPeriodSuffix(h24,phrase){
+  // mezzogiorno and mezzanotte are self-contained — no suffix needed
   if(phrase.includes('mezzanotte')||phrase.includes('mezzogiorno'))return'';
   const p=getPeriodLabel(h24);
-  if(p==='notte')return' di notte';
-  if(p==='mattina')return' di mattina';
-  if(p==='pomeriggio')return' del pomeriggio';
-  if(p==='sera')return' di sera';
+  if(p==='notte')      return' di notte';
+  if(p==='mattina')    return' di mattina';
+  if(p==='pomeriggio') return' del pomeriggio';
+  if(p==='sera')       return' di sera';
   return'';
 }
 
@@ -511,9 +511,8 @@ function showNewClock(){
   drawClock(hour,minute);
   bodyWrap.classList.add('visible');
   requestAnimationFrame(()=>drawBodyIcon(hour24));
-  const{phrase,formal}=getTimePhrase(hour,minute);
-  phraseEl.textContent=phrase; formalEl.textContent=formal;
   phraseEl.classList.remove('show'); formalEl.classList.remove('show');
+  phraseEl.textContent='\u00A0'; formalEl.textContent='\u00A0';
   timerEl.textContent='0.000 s'; timerEl.classList.remove('fast');
   startTime=performance.now(); running=true; revealed=false;
   tapLabel.textContent='Rivela';
@@ -522,7 +521,7 @@ function showNewClock(){
 function revealAnswer(){
   const elapsed=(performance.now()-startTime)/1000;
   timerEl.textContent=`${elapsed.toFixed(3)} s`; timerEl.classList.add('fast');
-  const{phrase,formal}=getTimePhrase(hour,minute);
+  const{phrase,formal}=getTimePhrase(hour,minute,hour24);
   let dp=phrase;
   if(showDiPeriod)dp+=getDiPeriodSuffix(hour24,phrase);
   phraseEl.textContent=dp; formalEl.textContent=formal;
